@@ -192,7 +192,7 @@ def submenu_eeg():
 
 def submenu_registro():
     while True:
-        separador("REGISTRO DE OBJETOS (bonus)")
+        separador("REGISTRO DE OBJETOS (extra)")
         print("  [1] Listar todos los objetos registrados")
         print("  [2] Buscar objeto por nombre")
         print("  [3] Eliminar objeto del registro")
@@ -212,8 +212,23 @@ def submenu_registro():
             else:
                 print(f"No se encontró '{nombre}' en el Registro.")
         elif op == "3":
-            nombre = input("  Nombre del objeto a eliminar: ").strip()
-            registro.eliminar(nombre)
+            if len(registro) == 0:
+                print("  El registro está vacío.")
+            else:
+                registro.listar()
+                nombre = input("\n  Escribe el nombre del objeto a eliminar: ").strip()
+                obj = registro.buscar(nombre)
+                if obj is None:
+                    print(f"'{nombre}' no encontrado.")
+                else:
+                    registro.eliminar(nombre)
+                    # También lo elimina de la lista activa
+                    if obj in objetos_siata:
+                        objetos_siata.remove(obj)
+                        print(f" Eliminado también del módulo SIATA.")
+                    elif obj in objetos_eeg:
+                        objetos_eeg.remove(obj)
+                        print(f" Eliminado también del módulo EEG.")
 
         pausar()
 
@@ -230,7 +245,7 @@ def menu_principal():
         separador("MENÚ PRINCIPAL")
         print("  [1] Módulo SIATA  – Archivos CSV de calidad del aire")
         print("  [2] Módulo EEG    – Archivos MAT de electroencefalografía")
-        print("  [3] Registro      – Ver / buscar objetos creados (bonus)")
+        print("  [3] Registro      – Ver / buscar objetos creados (extra)")
         print("  [0] Salir")
 
         op = pedir_opcion("\n  Elija una opción: ", ["0","1","2","3"])

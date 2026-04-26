@@ -69,7 +69,7 @@ class SiataCSV:
         self.ruta = ruta
         self.nombre = os.path.splitext(os.path.basename(ruta))[0]
         self.df = self._cargar()
-        os.makedirs(self.CARPETA_GRAFICOS, exist_ok=True)
+        os.makedirs(SiataCSV.CARPETA_GRAFICOS, exist_ok=True)
         print(f"\n Archivo '{self.nombre}' cargado correctamente.")
         print(f"    Filas: {len(self.df)} | Columnas: {list(self.df.columns)}")
 
@@ -138,7 +138,7 @@ class SiataCSV:
         plt.tight_layout()
 
         # Guardar
-        ruta_g = os.path.join(self.CARPETA_GRAFICOS,
+        ruta_g = os.path.join(SiataCSV.CARPETA_GRAFICOS,
                               f"{self.nombre}_{col}_graficos.png")
         fig.savefig(ruta_g, dpi=150)
         print(f"Gráfico guardado en: {ruta_g}")
@@ -189,7 +189,7 @@ class SiataCSV:
             print(f"\n Columna '{op_str}' creada.")
             print(self.df[[col_a, col_b, op_str]].head(8))
 
-    # ── Req. 6: resample + guardar ───────────
+    # resample + guardar
     def graficar_remuestreo(self):
         col = self._elegir_columna("remuestreo")
         serie = self.df[col].dropna()
@@ -217,7 +217,7 @@ class SiataCSV:
 
         plt.tight_layout()
 
-        ruta_g = os.path.join(self.CARPETA_GRAFICOS,
+        ruta_g = os.path.join(SiataCSV.CARPETA_GRAFICOS,
                               f"{self.nombre}_{col}_remuestreo.png")
         fig.savefig(ruta_g, dpi=150)
         print(f" Gráfico de remuestreo guardado en: {ruta_g}")
@@ -229,14 +229,14 @@ class SiataCSV:
     
 
 class EEGMat:
-    """
-    Maneja archivos .mat de electroencefalografía (EEG).
+    
+    """Maneja archivos .mat de electroencefalografía (EEG).
 
     Estructura esperada:
-      data  →  (canales, muestras_por_epoca, num_epocas)
+      data  →  (canales, muestras_por_epoca, num_epocas)"""
             
     CARPETA_GRAFICOS = "graficos_eeg"
-    FS = 1000 """
+    FS = 1000 
 
     def __init__(self, ruta):
         validar_ruta(ruta, ".mat")
@@ -244,8 +244,8 @@ class EEGMat:
         self.nombre = os.path.splitext(os.path.basename(ruta))[0]
         self.data3d = None   # (canales, muestras, epocas)
         self.data2d = None   # (canales, muestras_total)
+        os.makedirs(EEGMat.CARPETA_GRAFICOS, exist_ok=True)
         self._cargar()
-        os.makedirs(self.CARPETA_GRAFICOS, exist_ok=True)
 
     #cargar
     def _cargar(self):
@@ -272,7 +272,7 @@ class EEGMat:
         self.data2d = self.data3d.reshape(n_ch, n_muestras * n_epocas)
         print(f"     Matriz 2D resultante: {self.data2d.shape}")
 
-    # ── Propiedad: número de canales ─────────
+    #  Propiedad: número de canales 
     @property
     def n_canales(self):
         return self.data3d.shape[0]
@@ -281,7 +281,7 @@ class EEGMat:
     def n_muestras_total(self):
         return self.data2d.shape[1]
 
-    # ── Req. 7a: suma de 3 canales en 2D ─────
+    #suma de 3 canales en 2D 
     def sumar_canales(self):
         print(f"\n  Canales disponibles: 0 a {self.n_canales - 1}")
         canales = []
@@ -323,14 +323,14 @@ class EEGMat:
         plt.tight_layout()
 
         ruta_g = os.path.join(
-            self.CARPETA_GRAFICOS,
+            EEGMat.CARPETA_GRAFICOS,
             f"{self.nombre}_suma_canales_{'_'.join(map(str, canales))}.png"
         )
         fig.savefig(ruta_g, dpi=150)
         print(f"Gráfico guardado en: {ruta_g}")
         plt.show()
 
-    # ── Req. 7b: promedio y std sobre eje 3D ─
+    # promedio y std sobre eje 3D 
     def estadisticos_3d(self):
         n_ch, n_muestras, n_epocas = self.data3d.shape
         print(f"\n  Dimensiones de la matriz 3D: {self.data3d.shape}")
@@ -370,7 +370,7 @@ class EEGMat:
         plt.tight_layout()
 
         ruta_g = os.path.join(
-            self.CARPETA_GRAFICOS,
+            EEGMat.CARPETA_GRAFICOS,
             f"{self.nombre}_stats_eje{eje}.png"
         )
         fig.savefig(ruta_g, dpi=150)
