@@ -141,7 +141,7 @@ class SiataCSV:
         ruta_g = os.path.join(self.CARPETA_GRAFICOS,
                               f"{self.nombre}_{col}_graficos.png")
         fig.savefig(ruta_g, dpi=150)
-        print(f"  ✔ Gráfico guardado en: {ruta_g}")
+        print(f"Gráfico guardado en: {ruta_g}")
         plt.show()
     
     def operaciones(self):
@@ -220,7 +220,7 @@ class SiataCSV:
         ruta_g = os.path.join(self.CARPETA_GRAFICOS,
                               f"{self.nombre}_{col}_remuestreo.png")
         fig.savefig(ruta_g, dpi=150)
-        print(f"  ✔ Gráfico de remuestreo guardado en: {ruta_g}")
+        print(f" Gráfico de remuestreo guardado en: {ruta_g}")
         plt.show()
 
     def __str__(self):
@@ -236,7 +236,7 @@ class EEGMat:
       data  →  (canales, muestras_por_epoca, num_epocas)
             
     CARPETA_GRAFICOS = "graficos_eeg"
-    FS = 1000 
+    FS = 1000 """
 
     def __init__(self, ruta):
         validar_ruta(ruta, ".mat")
@@ -245,8 +245,145 @@ class EEGMat:
         self.data3d = None   # (canales, muestras, epocas)
         self.data2d = None   # (canales, muestras_total)
         self._cargar()
-        os.makedirs(self.CARPETA_GRAFICOS, exist_ok=True)"""
-    
+        os.makedirs(self.CARPETA_GRAFICOS, exist_ok=True)
+
+    #cargar
+    def _cargar(self):
+        print(f"\n whosmat de '{self.nombre}' ")
+        info = sio.whosmat(self.ruta)
+        for nombre, forma, tipo in info:
+            print(f"    Variable: '{nombre}'  |  forma: {forma}  |  tipo: {tipo}")
+
+        mat = sio.loadmat(self.ruta)
+        # Buscar la clave de datos (generalmente 'data')
+        clave = None
+        for k in mat:
+            if not k.startswith("__"):
+                clave = k
+                break
+        if clave is None:
+            raise KeyError("No se encontró variable de datos en el archivo .mat")
+
+        self.data3d = mat[clave]  # (ch, muestras, epocas)
+        n_ch, n_muestras, n_epocas = self.data3d.shape
+        print(f"\n Cargado '{clave}': {n_ch} canales, "
+              f"{n_muestras} muestras/época, {n_epocas} épocas")
+        # Convertir a 2D: (canales, muestras_total)
+        self.data2d = self.data3d.reshape(n_ch, n_muestras * n_epocas)
+        print(f"     Matriz 2D resultante: {self.data2d.shape}")
+
+    # ── Propiedad: número de canales ─────────
+    @property
+    def n_canales(self):
+        return self.data3d.shape[0]
+
+    @property
+    def n_muestras_total(self):
+        return self.data2d.shape[1]
+
+    # ── Req. 7a: suma de 3 canales en 2D ─────
+    def sumar_canales(self):
+        print(f"\n  Canales disponibles: 0 a {self.n_canales - 1}")
+        canales = []
+        for i in range(3):
+            c = pedir_entero(f"  Canal {i+1}: ", 0, self.n_canales - 1)
+            canales.append(c)
+
+        total = self.n_muestras_total
+        print(f"  Rango de muestras: 0 a {total - 1}")
+        p_min = pedir_entero("  Muestra mínima: ", 0, total - 2)
+        p_max = pedir_entero("  Muestra máxima: ", p_min + 1, total - 1)
+
+        # Señales seleccionadas (en µV, de la matriz 2D)
+        segmentos = [self.data2d[c, p_min:p_max] for c in canales]
+        t = np.arange(p_max - p_min) / self.FS  # eje de tiempo en segundos
+
+        suma = segmentos[0] + segmentos[1] + segmentos[2]
+
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
+        fig.suptitle(f"Suma de canales  –  {self.nombre}", fontsize=13)
+
+        colores = ["steelblue", "darkorange", "seagreen"]
+        for idx, (seg, c) in enumerate(zip(segmentos, canales)):
+            ax1.plot(t, seg, color=colores[idx],
+                     linewidth=0.8, label=f"Canal {c}")
+        ax1.set_title("Canales seleccionados")
+        ax1.set_xlabel("Tiempo (s)")
+        ax1.set_ylabel("Amplitud (µV)")
+        ax1.legend()
+        ax1.grid(True, linestyle="--", alpha=0.4)
+
+        ax2.plot(t, suma, color="crimson", linewidth=0.9, label="Suma")
+        ax2.set_title(f"Resultado: Canal {canales[0]} + Canal {canales[1]} + Canal {canales[2]}")
+        ax2.set_xlabel("Tiempo (s)")
+        ax2.set_ylabel("Amplitud (µV)")
+        ax2.legend()
+        ax2.grid(True, linestyle="--", alpha=0.4)
+
+        plt.tight_layout()
+
+        ruta_g = os.path.join(
+            self.CARPETA_GRAFICOS,
+            f"{self.nombre}_suma_canales_{'_'.join(map(str, canales))}.png"
+        )
+        fig.savefig(ruta_g, dpi=150)
+        print(f"Gráfico guardado en: {ruta_g}")
+        plt.show()
+
+    # ── Req. 7b: promedio y std sobre eje 3D ─
+    def estadisticos_3d(self):
+        n_ch, n_muestras, n_epocas = self.data3d.shape
+        print(f"\n  Dimensiones de la matriz 3D: {self.data3d.shape}")
+        print(f"    Eje 0 → canales ({n_ch})")
+        print(f"    Eje 1 → muestras ({n_muestras})")
+        print(f"    Eje 2 → épocas  ({n_epocas})")
+        eje = pedir_entero("  Eje para promedio/std (0, 1 o 2): ", 0, 2)
+
+        promedio = np.mean(self.data3d, axis=eje)
+        std      = np.std(self.data3d, axis=eje)
+
+        # Aplanar para graficar con stem (tomamos la primera fila/columna)
+        prom_flat = promedio.flatten()
+        std_flat  = std.flatten()
+
+        # Limitar puntos para stem (máx 300 para visualización clara)
+        N = min(300, len(prom_flat))
+        x = np.arange(N)
+
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
+        fig.suptitle(f"Estadísticos 3D (eje={eje})  –  {self.nombre}", fontsize=13)
+
+        ax1.stem(x, prom_flat[:N], linefmt="C0-", markerfmt="C0o",
+                 basefmt="k-")
+        ax1.set_title(f"Promedio a lo largo del eje {eje}")
+        ax1.set_xlabel("Índice")
+        ax1.set_ylabel("Promedio (µV)")
+        ax1.grid(True, linestyle="--", alpha=0.4)
+
+        ax2.stem(x, std_flat[:N], linefmt="C1-", markerfmt="C1o",
+                 basefmt="k-")
+        ax2.set_title(f"Desviación estándar a lo largo del eje {eje}")
+        ax2.set_xlabel("Índice")
+        ax2.set_ylabel("Std (µV)")
+        ax2.grid(True, linestyle="--", alpha=0.4)
+
+        plt.tight_layout()
+
+        ruta_g = os.path.join(
+            self.CARPETA_GRAFICOS,
+            f"{self.nombre}_stats_eje{eje}.png"
+        )
+        fig.savefig(ruta_g, dpi=150)
+        print(f"  ✔ Gráfico guardado en: {ruta_g}")
+        plt.show()
+
+    def __str__(self):
+        n_ch, n_m, n_e = self.data3d.shape
+        return (f"EEGMat | archivo: {self.nombre} | "
+                f"{n_ch} canales, {n_m} muestras/época, {n_e} épocas")
+
+
+
 
  
     
