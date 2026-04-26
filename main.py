@@ -187,3 +187,64 @@ def submenu_eeg():
                 obj.estadisticos_3d()
 
         pausar()
+
+#submennu registro
+
+def submenu_registro():
+    while True:
+        separador("REGISTRO DE OBJETOS (bonus)")
+        print("  [1] Listar todos los objetos registrados")
+        print("  [2] Buscar objeto por nombre")
+        print("  [3] Eliminar objeto del registro")
+        print("  [0] Volver al menú principal")
+
+        op = pedir_opcion("\n  Elija una opción: ", ["0","1","2","3"])
+
+        if op == "0":
+            break
+        elif op == "1":
+            registro.listar()
+        elif op == "2":
+            nombre = input("  Nombre del objeto a buscar: ").strip()
+            obj = registro.buscar(nombre)
+            if obj:
+                print(f"\nEncontrado: {obj}")
+            else:
+                print(f"No se encontró '{nombre}' en el Registro.")
+        elif op == "3":
+            nombre = input("  Nombre del objeto a eliminar: ").strip()
+            registro.eliminar(nombre)
+
+        pausar()
+
+#menu principal
+
+def menu_principal():
+    print("\n" + "╔" + "═"*56 + "╗")
+    print("║   SISTEMA DE EXPLORACIÓN NEUROAMBIENTAL              ║")
+    print("║   Universidad de Antioquia – Bioingeniería           ║")
+    print("║   Informática II  2026-1                             ║")
+    print("╚" + "═"*56 + "╝")
+
+    while True:
+        separador("MENÚ PRINCIPAL")
+        print("  [1] Módulo SIATA  – Archivos CSV de calidad del aire")
+        print("  [2] Módulo EEG    – Archivos MAT de electroencefalografía")
+        print("  [3] Registro      – Ver / buscar objetos creados (bonus)")
+        print("  [0] Salir")
+
+        op = pedir_opcion("\n  Elija una opción: ", ["0","1","2","3"])
+
+        if op == "0":
+            print("\n  ¡Hasta luego!\n")
+            break
+        elif op == "1":
+            submenu_siata()
+        elif op == "2":
+            submenu_eeg()
+        elif op == "3":
+            submenu_registro()
+
+
+if __name__ == "__main__":
+    menu_principal()
