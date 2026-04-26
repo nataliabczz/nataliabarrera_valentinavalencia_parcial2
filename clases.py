@@ -1,3 +1,5 @@
+#Link al repositorio
+#https://github.com/nataliabczz/nataliabarrera_valentinavalencia_parcial2.git
 import os
 import numpy as np
 import pandas as pd
