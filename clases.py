@@ -157,7 +157,7 @@ class SiataCSV:
             result = serie.apply(lambda x: np.log(x) if x > 0 else np.nan)
             col_nueva = f"log_{col}"
             self.df[col_nueva] = result
-            print(f"\n  ✔ Columna '{col_nueva}' creada con apply (log natural).")
+            print(f"\n Columna '{col_nueva}' creada con apply (log natural).")
             print(self.df[[col, col_nueva]].head(8))
 
         elif op == "2":
@@ -168,7 +168,7 @@ class SiataCSV:
             )
             col_nueva = f"clase_{col}"
             self.df[col_nueva] = resultado
-            print(f"\n  ✔ Columna '{col_nueva}' creada con map (umbral={umbral}).")
+            print(f"\n Columna '{col_nueva}' creada con map (umbral={umbral}).")
             print(self.df[[col, col_nueva]].head(8))
             print("\n  Distribución:")
             print(resultado.value_counts())
@@ -186,7 +186,7 @@ class SiataCSV:
                 resultado = self.df[col_a] - self.df[col_b]
                 op_str = f"{col_a}_-_{col_b}"
             self.df[op_str] = resultado
-            print(f"\n  ✔ Columna '{op_str}' creada.")
+            print(f"\n Columna '{op_str}' creada.")
             print(self.df[[col_a, col_b, op_str]].head(8))
 
     # ── Req. 6: resample + guardar ───────────
@@ -374,14 +374,50 @@ class EEGMat:
             f"{self.nombre}_stats_eje{eje}.png"
         )
         fig.savefig(ruta_g, dpi=150)
-        print(f"  ✔ Gráfico guardado en: {ruta_g}")
+        print(f"Gráfico guardado en: {ruta_g}")
         plt.show()
 
     def __str__(self):
         n_ch, n_m, n_e = self.data3d.shape
         return (f"EEGMat | archivo: {self.nombre} | "
                 f"{n_ch} canales, {n_m} muestras/época, {n_e} épocas")
+    
+#extra
 
+class Registro:
+    """
+    Almacena objetos SiataCSV y EEGMat y permite buscarlos por nombre.
+    """
+
+    def __init__(self):
+        self._objetos = {}  # {nombre: objeto}
+
+    def agregar(self, objeto):
+        """Registra un objeto con su .nombre como clave."""
+        self._objetos[objeto.nombre] = objeto
+        print(f"Objeto '{objeto.nombre}' registrado en el Registro.")
+
+    def buscar(self, nombre):
+        """Devuelve el objeto si existe, None en caso contrario."""
+        return self._objetos.get(nombre, None)
+
+    def listar(self):
+        if not self._objetos:
+            print("  (Registro vacío)")
+            return
+        print("\n  ── Objetos en el Registro ──────────────────────────")
+        for i, (nombre, obj) in enumerate(self._objetos.items()):
+            print(f"  [{i}] {obj}")
+
+    def eliminar(self, nombre):
+        if nombre in self._objetos:
+            del self._objetos[nombre]
+            print(f"Objeto '{nombre}' eliminado del Registro.")
+        else:
+            print(f"{nombre}' no encontrado.")
+
+    def __len__(self):
+        return len(self._objetos)
 
 
 
