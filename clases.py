@@ -53,6 +53,7 @@ def validar_ruta(ruta, extension=None):
         raise ValueError(f"Se esperaba un archivo {extension}, se recibió: {ruta}")
     return True
 
+
 class SiataCSV:
     """maneja los archivos CSV del SIATA de calidad del aire.
     atributos
@@ -142,3 +143,110 @@ class SiataCSV:
         fig.savefig(ruta_g, dpi=150)
         print(f"  ✔ Gráfico guardado en: {ruta_g}")
         plt.show()
+    
+    def operaciones(self):
+        print("\nOperaciones disponibles")
+        print("  [1] apply  – calcular logaritmo natural de una columna")
+        print("  [2] map    – clasificar valores por umbral (bajo/alto)")
+        print("  [3] Sumar o restar dos columnas")
+        op = pedir_opcion("  Elija operación: ", ["1", "2", "3"])
+
+        if op == "1":
+            col = self._elegir_columna("apply (log)")
+            serie = self.df[col].dropna()
+            result = serie.apply(lambda x: np.log(x) if x > 0 else np.nan)
+            col_nueva = f"log_{col}"
+            self.df[col_nueva] = result
+            print(f"\n  ✔ Columna '{col_nueva}' creada con apply (log natural).")
+            print(self.df[[col, col_nueva]].head(8))
+
+        elif op == "2":
+            col = self._elegir_columna("map (clasificación)")
+            umbral = pedir_float(f"  Ingrese el umbral para '{col}': ")
+            resultado = self.df[col].map(
+                lambda x: "alto" if (not pd.isna(x) and x >= umbral) else "bajo"
+            )
+            col_nueva = f"clase_{col}"
+            self.df[col_nueva] = resultado
+            print(f"\n  ✔ Columna '{col_nueva}' creada con map (umbral={umbral}).")
+            print(self.df[[col, col_nueva]].head(8))
+            print("\n  Distribución:")
+            print(resultado.value_counts())
+
+        elif op == "3":
+            print("\n  Columna A:")
+            col_a = self._elegir_columna("columna A")
+            print("\n  Columna B:")
+            col_b = self._elegir_columna("columna B")
+            accion = pedir_opcion("  ¿Sumar (s) o restar (r)? ", ["s", "r"])
+            if accion == "s":
+                resultado = self.df[col_a] + self.df[col_b]
+                op_str = f"{col_a}_+_{col_b}"
+            else:
+                resultado = self.df[col_a] - self.df[col_b]
+                op_str = f"{col_a}_-_{col_b}"
+            self.df[op_str] = resultado
+            print(f"\n  ✔ Columna '{op_str}' creada.")
+            print(self.df[[col_a, col_b, op_str]].head(8))
+
+    # ── Req. 6: resample + guardar ───────────
+    def graficar_remuestreo(self):
+        col = self._elegir_columna("remuestreo")
+        serie = self.df[col].dropna()
+
+        diario     = serie.resample("D").mean()
+        mensual    = serie.resample("ME").mean()
+        trimestral = serie.resample("QE").mean()
+
+        fig, axes = plt.subplots(3, 1, figsize=(12, 10))
+        fig.suptitle(f"Remuestreo de '{col}'  –  {self.nombre}", fontsize=13)
+
+        for ax, datos, titulo, color in zip(
+            axes,
+            [diario, mensual, trimestral],
+            ["Diario (D)", "Mensual (ME)", "Trimestral (QE)"],
+            ["steelblue", "darkorange", "seagreen"]
+        ):
+            ax.plot(datos.index, datos.values, color=color,
+                    marker="o", markersize=3, linewidth=1.2)
+            ax.set_title(titulo)
+            ax.set_xlabel("Fecha")
+            ax.set_ylabel(col)
+            ax.grid(True, linestyle="--", alpha=0.5)
+            ax.tick_params(axis='x', rotation=30)
+
+        plt.tight_layout()
+
+        ruta_g = os.path.join(self.CARPETA_GRAFICOS,
+                              f"{self.nombre}_{col}_remuestreo.png")
+        fig.savefig(ruta_g, dpi=150)
+        print(f"  ✔ Gráfico de remuestreo guardado en: {ruta_g}")
+        plt.show()
+
+    def __str__(self):
+        return (f"SiataCSV | archivo: {self.nombre} | "
+                f"filas: {len(self.df)} | cols: {list(self.df.columns)}")
+    
+
+class EEGMat:
+    """
+    Maneja archivos .mat de electroencefalografía (EEG).
+
+    Estructura esperada:
+      data  →  (canales, muestras_por_epoca, num_epocas)
+            
+    CARPETA_GRAFICOS = "graficos_eeg"
+    FS = 1000 
+
+    def __init__(self, ruta):
+        validar_ruta(ruta, ".mat")
+        self.ruta = ruta
+        self.nombre = os.path.splitext(os.path.basename(ruta))[0]
+        self.data3d = None   # (canales, muestras, epocas)
+        self.data2d = None   # (canales, muestras_total)
+        self._cargar()
+        os.makedirs(self.CARPETA_GRAFICOS, exist_ok=True)"""
+    
+
+ 
+    
